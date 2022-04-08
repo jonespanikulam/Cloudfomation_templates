@@ -1,0 +1,131 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: RDS instance stack
+#using "parameters",using "max/min length" constraints in parameter, using "min max value" for parameter
+#using "Allowed values" attribute in parameter
+#using  "default values" attribute in parameter
+#using "allowed pattern" atrribute in parameter
+#using "update stack" in console to update the parameter value after stack creation using the same tamplate
+#using "NoEcho" atrribute in parameter to mask the parameter value with astrix.
+#using number list parameter <List>Number and fn::select. when you have 2 security group and have to pass the port number from list.
+#using string list parameter CommaDelimitedList and can be referenced from attribute
+#using aws specific parameter type. it validates parameters against existing values of aws like vpc id, subnetid, ec2 image,keypair etc..
+#using pseudo parameter with fn::sub functions,pseudo parameter are parameter that are not definced in the template. eg: AWS::Region,AWS::StackName,AWS::AccountId
+# these parameters are referenced using fn::sub function 
+Parameters:
+ 
+    DBclass:
+        Type: String
+        Description: RDS instance class
+        AllowedValues:
+          - db.t2.micro
+          - db.t2.small
+        ConstraintDescription: 'the allowed db class parameter is only db.t2.micro and db.t2.small' 
+        Default: db.t2.micro        
+    AllocatedStorageClass:
+        Type: Number
+        Description: Storage value in GB
+        MinValue: 8
+        MaxValue: 20
+        Default: 8
+        ConstraintDescription: allocated values for the storage should be in between 8 and 20Gb
+    MasterUsernameClass:
+        Type: String
+        Description: Write username of DB
+        MaxLength: 10
+        Default: admin
+        AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+        NoEcho: true
+    MasterPasswordClass:
+        Type: String
+        Description: Write password
+        MinLength: 8
+        NoEcho: true
+    MultiAZClass:
+        Type: String
+        Description: needed multiAZ?
+        AllowedValues:
+          - True
+          - False
+        ConstraintDescription: 'the allowed value is true or false'
+        Default: False
+        
+    SecurityGroupPorts:
+        Type: List<Number>
+        Description: 'Port number as a list: <database port> , <webserver port>'
+        Default: '3306,80'
+    DBsubnets:
+    #   Type: CommaDelimitedList
+        Type: List<AWS::EC2::Subnet::Id>
+        Description: 'subnets seperated by commas <subnet1>,<subnet2>,<subnet3>'
+    VpcId:
+        Type: AWS::EC2::VPC::Id
+        Description: Select the vpc id.
+        
+    
+
+Resources:
+
+    Bastions:
+        Type: AWS::EC2::Instance
+        Properties:
+          ImageId: ami-09693313102a30b2c
+          InstanceType: t2.micro
+          SubnetId: !Select [ 0, !Ref DBsubnets ] 
+          Tags:
+            - Key: Name
+              Value: !Sub '${AWS::StackName}-Bastion'
+                  
+    DatabaseSecurityGRoup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            VpcId: !Ref VpcId
+            GroupDescription: Database security group
+            SecurityGroupIngress:
+              - IpProtocol: tcp
+                FromPort: 
+                  Fn::Select: [ 0, !Ref SecurityGroupPorts ]
+                ToPort: !Select [ 0, !Ref SecurityGroupPorts ]
+                CidrIp: 0.0.0.0/0
+                
+    WebserverSecurityGRoup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            VpcId: !Ref VpcId
+            GroupDescription: Webserver security group
+            SecurityGroupIngress:
+              - IpProtocol: tcp
+                FromPort: !Select [ 1, !Ref SecurityGroupPorts]
+                ToPort: !Select [ 1, !Ref SecurityGroupPorts]
+                CidrIp: 0.0.0.0/0            
+                
+
+    DBSubnetGroup:
+        Type: AWS::RDS::DBSubnetGroup
+        Properties: 
+            DBSubnetGroupDescription: rds db security group
+            DBSubnetGroupName: SecurityGroupRDS
+            SubnetIds: !Ref DBsubnets
+          # since its referenced from attribute you can have any number of subnet and is not limited as such using Select function.  
+          # or can be done as !Select [ 0, !Ref DBsubnets ]
+          #     !Select [ 1, !Ref DBsubnets ]
+          #     !Select [ 2, !Ref DBsubnets ]
+          #   - subnet-0c2551bc4fecbee76
+          #   - subnet-04cae296c63da4bc9
+          #   - subnet-0c2e13171902d07b8
+            Tags: 
+              -  Key: Name
+                 Value: Subnet added to the DB instance
+    
+    DatabaseInstance:
+        Type: AWS::RDS::DBInstance
+        Properties:
+            DBInstanceClass: !Ref DBclass
+            Engine: mariadb
+            MultiAZ: !Ref MultiAZClass
+            PubliclyAccessible: true
+            AllocatedStorage: !Ref AllocatedStorageClass
+            MasterUsername: !Ref MasterUsernameClass
+            MasterUserPassword: !Ref MasterPasswordClass
+            VPCSecurityGroups: 
+              -  !Ref DatabaseSecurityGRoup
+            DBSubnetGroupName: !Ref DBSubnetGroup    

@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  A database stack template that creates a master RDS instance and a read replica. 
+  It also provisions a security group and attaches to the db instances.
+  
+  
+# to check if environment is production, if production create read replica.  Else dont create read replication
+# Conditions, Equals used
+# if condition is the only condition that can be used in the resource section
+# output section gives the output value of resources to view them in the console. you can output parameter ot pseduparameter values.
+# ref function returns the dbinstance identifier. but if you wanna return other attribute use Fn::GetAtt
+# output section for conditional statements.
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - 
+        Label:
+          default: Network Settings 
+        Parameters:
+          - VpcId
+          - DbSubnets 
+
+Parameters:  
+  DbSubnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: 'Db subnet ids as a list: <subnet1>,<subnet2>,...'
+  VpcId:
+    Type: AWS::EC2::VPC::Id 
+    Description: A valid VPC id in your AWS account
+  EnvironmentName:
+    Type: String
+    AllowedValues: [ production, test ]
+
+Conditions:
+    IsEnvironmentProduction: !Equals [ !Ref EnvironmentName, production ]
+
+    
+
+Resources:
+  DbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcId
+      GroupDescription: 'Database instances security group'
+      SecurityGroupIngress:
+        - 
+          CidrIp: 0.0.0.0/0
+          FromPort: 3306
+          ToPort: 3306
+          IpProtocol: tcp
+
+  DbSubnetGroup:
+    Type: 'AWS::RDS::DBSubnetGroup'
+    Properties:
+      DBSubnetGroupDescription: Subnets to launch db instances into
+      SubnetIds: !Ref DbSubnets
+
+  MasterDbInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceClass: !If [ IsEnvironmentProduction, db.t2.micro,  db.t2.small]
+      # using if condition       
+      Engine: mysql
+      MultiAZ: false
+      PubliclyAccessible: true
+      AllocatedStorage: 8 
+      MasterUsername: dbadmin
+      MasterUserPassword: dbpassword
+      DBSubnetGroupName: !Ref DbSubnetGroup
+      VPCSecurityGroups: 
+        - !Ref DbSecurityGroup
+
+  ReadReplica:
+    Type: AWS::RDS::DBInstance
+    Condition: IsEnvironmentProduction
+    Properties:
+      SourceDBInstanceIdentifier: !Ref MasterDbInstance
+      DBInstanceClass: db.t2.micro 
+      Engine: mysql
+      PubliclyAccessible: true
+      VPCSecurityGroups: 
+        - !Ref DbSecurityGroup
+
+Outputs:
+    DbInstanceId: 
+        Value: !Ref MasterDbInstance
+        Description: The instance id of master instance 
+    MasterDBendpoint:
+        Value: !GetAtt [ MasterDbInstance, Endpoint.Address ] 
+        Description: Connection endpoint of master database instance
+    ReadReplicaEndpoint:
+        Value: !GetAtt [ ReadReplica, Endpoint.Address ]
+        Description: Connection endpoint of read replica instance
+        Condition: IsEnvironmentProduction

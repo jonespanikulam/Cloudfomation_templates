@@ -1,0 +1,164 @@
+#AWSTemplateFormatVersion: 2010-09-09
+Description: RDS instance stack for describing metadata for interface in console
+#example to describe how metadata in interface works
+#default should be in small letters for this to work
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+           default: Database instance settings
+        Parameters:
+   #      - DBclass
+          - AllocatedStorageClass
+          - MasterUsernameClass
+          - MasterPasswordClass
+          - MultiAZClass
+      - Label:
+          default: Network settings
+        Parameters:
+          - SecurityGroupPorts
+          - DBsubnets
+          - VpcId
+        
+    ParameterLabels:
+#     DBclass:
+#       default: Database instance Class
+      AllocatedStorageClass:
+        default: Allocated storage size
+
+# this will replace the DBclass name with Database instance class.
+
+Parameters:
+ 
+ #  DBclass:
+ #      Type: String
+ #      Description: RDS instance class
+ #      AllowedValues:
+ #        - db.t2.micro
+ #        - db.t2.small
+ #      ConstraintDescription: 'the allowed db class parameter is only db.t2.micro and db.t2.small' 
+ #      Default: db.t2.micro        
+    AllocatedStorageClass:
+        Type: Number
+        Description: Storage value in GB
+        MinValue: 8
+        MaxValue: 20
+        Default: 8
+        ConstraintDescription: allocated values for the storage should be in between 8 and 20Gb
+    MasterUsernameClass:
+        Type: String
+        Description: Write username of DB
+        MaxLength: 10
+        Default: admin
+        AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+        NoEcho: true
+    MasterPasswordClass:
+        Type: String
+        Description: Write password
+        MinLength: 8
+        NoEcho: true
+    MultiAZClass:
+        Type: String
+        Description: needed multiAZ?
+        AllowedValues:
+          - True
+          - False
+        ConstraintDescription: 'the allowed value is true or false'
+        Default: False
+        
+    SecurityGroupPorts:
+        Type: List<Number>
+        Description: 'Port number as a list: <database port> , <webserver port>'
+        Default: '3306,80'      
+        
+    DBsubnets:
+    #   Type: CommaDelimitedList
+        Type: List<AWS::EC2::Subnet::Id>
+        Description: 'subnets seperated by commas <subnet1>,<subnet2>,<subnet3>'
+    VpcId:
+        Type: AWS::EC2::VPC::Id
+        Description: Select the vpc id.
+    EnvironmentName:
+        Type: String
+        AllowedValues:
+          - Production
+          - Test
+       
+Mappings:
+    EnvironmentOptions:
+      Production:
+        DBclass: db.t2.micro
+      Test:
+        DBclass: db.t2.small
+
+
+       
+
+Resources:
+
+    Bastions:
+        Type: AWS::EC2::Instance
+        Properties:
+          ImageId: ami-09693313102a30b2c
+          InstanceType: t2.micro
+          SubnetId: !Select [ 0, !Ref DBsubnets ] 
+          Tags:
+            - Key: Name
+              Value: !Sub '${AWS::StackName}-Bastion'
+                  
+    DatabaseSecurityGRoup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            VpcId: !Ref VpcId
+            GroupDescription: Database security group
+            SecurityGroupIngress:
+              - IpProtocol: tcp
+                FromPort: 
+                  Fn::Select: [ 0, !Ref SecurityGroupPorts ]
+                ToPort: !Select [ 0, !Ref SecurityGroupPorts ]
+                CidrIp: 0.0.0.0/0
+                
+    WebserverSecurityGRoup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            VpcId: !Ref VpcId
+            GroupDescription: Webserver security group
+            SecurityGroupIngress:
+              - IpProtocol: tcp
+                FromPort: !Select [ 1, !Ref SecurityGroupPorts]
+                ToPort: !Select [ 1, !Ref SecurityGroupPorts]
+                CidrIp: 0.0.0.0/0            
+                
+
+    DBSubnetGroup:
+        Type: AWS::RDS::DBSubnetGroup
+        Properties: 
+            DBSubnetGroupDescription: rds db security group
+            DBSubnetGroupName: SecurityGroupRDS
+            SubnetIds: !Ref DBsubnets
+          # since its referenced from attribute you can have any number of subnet and is not limited as such using Select function.  
+          # or can be done as !Select [ 0, !Ref DBsubnets ]
+          #     !Select [ 1, !Ref DBsubnets ]
+          #     !Select [ 2, !Ref DBsubnets ]
+          #   - subnet-0c2551bc4fecbee76
+          #   - subnet-04cae296c63da4bc9
+          #   - subnet-0c2e13171902d07b8
+            Tags: 
+              -  Key: Name
+                 Value: Subnet added to the DB instance
+    
+    DatabaseInstance:
+        Type: AWS::RDS::DBInstance
+        Properties:
+#           DBInstanceClass: !Ref DBclass
+            DBInstanceClass: !FindInMap [ EnvironmentOptions, !Ref EnvironmentName, DBclass]
+            #mapping !Ref parameter mapping-keyvalue
+            Engine: mariadb
+            MultiAZ: !Ref MultiAZClass
+            PubliclyAccessible: true
+            AllocatedStorage: !Ref AllocatedStorageClass
+            MasterUsername: !Ref MasterUsernameClass
+            MasterUserPassword: !Ref MasterPasswordClass
+            VPCSecurityGroups: 
+              -  !Ref DatabaseSecurityGRoup
+            DBSubnetGroupName: !Ref DBSubnetGroup    

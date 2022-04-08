@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: VPC template and adding EC2 instance
+Resources:
+    VPCResource:
+        Type: AWS::EC2::VPC 
+        Properties:
+            CidrBlock: 10.0.0.0/16
+            #EnableDnsSupport: 'true'
+            #EnableDnsHostnames: 'true'
+            Tags:
+            - Key: Name
+              Value: myVPC
+            
+    mySubnet:
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId:
+            CidrBlock: 10.0.0.0/24
+            #AvailabilityZone: "us-east-1a"
+            MapPublicIpOnLaunch: true
+            VpcId: !Ref VPCResource
+            Tags:
+            - Key: Name
+              Value: PublicSubnet
+        
+    myRouteTable:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId: !Ref VPCResource
+        Tags:
+        - Key: Name
+          Value: my Routetable     
+        
+    myInternetGateway:
+      Type: AWS::EC2::InternetGateway
+      Properties:
+        Tags:
+        - Key: Name
+          Value: my internet gateway
+
+    AttachGateway:
+      Type: AWS::EC2::VPCGatewayAttachment
+      Properties:
+        VpcId: !Ref VPCResource
+        InternetGatewayId: !Ref myInternetGateway
+       
+    PublicRoute:
+      Type: AWS::EC2::Route
+      DependsOn: 
+        - AttachGateway
+      Properties:
+        RouteTableId: !Ref myRouteTable
+        DestinationCidrBlock: 0.0.0.0/0
+        GatewayId: !Ref myInternetGateway
+      
+    mySubnetRouteTableAssociation:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId: !Ref mySubnet
+        RouteTableId: !Ref myRouteTable   
+      
+      
+      
+    Ec2Instance: 
+      Type: AWS::EC2::Instance
+      DependsOn:
+        - PublicRoute
+        - mySubnetRouteTableAssociation
+      Properties:
+        ImageId: ami-09693313102a30b2c
+        InstanceType: t2.micro
+        SubnetId: !Ref mySubnet
+        SecurityGroupIds: 
+          - !Ref InstanceSecurityGroup
+        
+    InstanceSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: Allow ICMP to client host
+        VpcId: !Ref VPCResource
+        SecurityGroupIngress:
+        - IpProtocol: ICMP
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+       
