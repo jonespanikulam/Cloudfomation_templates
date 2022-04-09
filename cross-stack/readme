@@ -2,3 +2,6 @@ Cross stack
 
             export      OUTPUTS   import   
 VPC stack   ------>    (SUBNETS) ------->  DATABASE STACK  
+
+
+- outputs of vpc stack for subnet and security group can be imported to database stack.
