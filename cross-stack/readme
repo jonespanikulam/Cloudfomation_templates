@@ -5,3 +5,11 @@ VPC stack   ------>    (SUBNETS) ------->  DATABASE STACK
 
 
 - outputs of vpc stack for subnet and security group can be imported to database stack.
+
+
+You cannnot change the value of the exported output, if it already imported by another stack. You should take this into account while deciding which output to export
+stack. In cross stack references you share the resources between stacks. Here each stack is managed seperately so your update may have unexpected consequences
+on the stack which is importing it. So to avoid this you can use nested stacks.
+
+Referenced stack(database stack) should be deleted first before deleateing the vpc stack. You can prevent accidental deletion of exported stack by turning on
+termination protection.
