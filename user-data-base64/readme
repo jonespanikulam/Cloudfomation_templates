@@ -1,4 +1,6 @@
-Userdata is used in webserver-template to install the user scripts under resource section in ec2 instance.
+Adding userdata scripts
+-------------------------
+Userdata attribute is used in webserver-template to install the user scripts under resource section in ec2 instance.
 
   UserData:
         Fn::Base64: |
