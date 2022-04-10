@@ -1,6 +1,8 @@
 Nested stack using CLI.
 --------------------------.
 
+Package command can be used to package the template url and upload it to s3.
+
 
 # Packaging nested templates
 aws cloudformation package \
