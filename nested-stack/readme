@@ -1,7 +1,8 @@
 Nested stack using CLI.
 --------------------------.
 
-Package command can be used to package the template url and upload it to s3.
+Package command can be used to package the template url and upload it to s3. 
+so TemplateURL: 'https://my-cf-templates-bucket.s3-eu-west-1.amazonaws.com/network-template.yaml' from root stack can be replaced with TemplateURL: network-template.yaml
 
 
 # Packaging nested templates
