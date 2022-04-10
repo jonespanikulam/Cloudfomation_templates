@@ -11,3 +11,4 @@ Userdata attribute is used in webserver-template to install the user scripts und
           
           
  Packaged-root-template.yaml file is created after the "package script." 
+ Also deployment is done through deploy scripts.
