@@ -1,0 +1,16 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Root stack template for AWS CloudFormation Step by Step series.
+Resources:
+  NetworkStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: 'https://my-cf-templates-bucket.s3-eu-west-1.amazonaws.com/network-template.yaml'
+  
+  DatabaseStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: 'https://my-cf-templates-bucket.s3-eu-west-1.amazonaws.com/database-template.yaml'
+      Parameters:
+        AllocatedStorage: 10
+        DbSecurityGroup: !GetAtt NetworkStack.Outputs.DbSecurityGroup
+        DbSubnets: !GetAtt NetworkStack.Outputs.PrivateSubnets
