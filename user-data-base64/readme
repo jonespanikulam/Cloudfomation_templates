@@ -6,3 +6,6 @@ Userdata is used in webserver-template to install the user scripts under resourc
           yum update -y
           amazon-linux-extras install -y nginx1
           service nginx start
+          
+          
+ Packaged-root-template.yaml file is created after the "packaged script." 
