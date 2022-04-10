@@ -8,4 +8,4 @@ Userdata is used in webserver-template to install the user scripts under resourc
           service nginx start
           
           
- Packaged-root-template.yaml file is created after the "packaged script." 
+ Packaged-root-template.yaml file is created after the "package script." 
