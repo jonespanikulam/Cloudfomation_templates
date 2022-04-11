@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Web server stack template
+  
+Parameters:
+  ImageId:
+    Type: AWS::EC2::Image::Id
+    Description: AMI of the web server instance
+
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: The public subnet that the instance will be launched into
+
+  WebServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup::Id 
+    Description: The security group that will be attached to the instance
+    
+  WebServerBucket:
+    Type: String
+
+Resources:
+  WebServerInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !Ref ImageId
+      SecurityGroupIds: 
+        - !Ref WebServerSecurityGroup
+      SubnetId: !Ref SubnetId
+      IamInstanceProfile: !Ref MyInstanceProfile
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-WebServer'
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          yum update -y
+          amazon-linux-extras install -y nginx1
+          rm -rf /usr/share/nginx/html/*
+          aws s3 cp s3://${WebServerBucket}/index.html /usr/share/nginx/html/
+          service nginx start
+          
+  WebServerIAMRole:
+    Type: AWS::IAM::Role
+    Properties: 
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - Effect: "Allow"
+            Principal: 
+              Service: 
+                - "ec2.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: WebServerBucketAccessPolicies
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow    
+                Action: 
+                  - 's3:Get*'
+                Resource: 
+                  - !Sub 'arn:aws:s3:::${WebServerBucket}/*'  
+
+  # Role cannot be attached directly to instance, so we need a Instance profile
+  MyInstanceProfile: 
+     Type: "AWS::IAM::InstanceProfile"
+     Properties: 
+       Roles: 
+        - !Ref WebServerIAMRole
+     
+
+Outputs:
+  WebServerPublicDNS:
+    Description: Public DNS name of the web server instance
+    Value: !GetAtt WebServerInstance.PublicDnsName
