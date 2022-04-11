@@ -1,1 +1,4 @@
-
+cfn-init
+---------
+It is used to configure services such as EC2 instances to install package, start services, run files and commands. To do this we can fetch and parse 
+the Cloudformation init metadatas on the stack to get the configuration imformations
