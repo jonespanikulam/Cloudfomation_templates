@@ -1,0 +1,17 @@
+To make the webserver instance wait util the user data script finish sucessfully and make it reach CREATE_COMPLETE state only if the script succeed we use
+CreationPolicy attribute and cfn-signal script.
+
+CreationPolicy attribute:
+* Prevent the resource reaching CREATE_COMPLETE state until a specified number of sucess signals are received. If this fails it rolls back
+* currently supported in ec2 instance and autoscaling group.
+* cfn signal used from inside aws, if needed to be sent from outside use cloudfomation signal resource api 
+
+CreationPolicy:
+      ResourceSignal:
+        Count: 1
+        Timeout: PT10M
+
+
+Cfn-signal used to update the cloudformation resource to indicate whether it is updated sucessfully or not.
+
+/opt/aws/bin/cfn-signal -s true --stack ${AWS::StackName} --resource WebServerInstance --region ${AWS::Region}
