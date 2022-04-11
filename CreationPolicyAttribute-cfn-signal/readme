@@ -9,9 +9,11 @@ CreationPolicy attribute:
 CreationPolicy:
       ResourceSignal:
         Count: 1
-        Timeout: PT10M
+        Timeout: PT10M    ----wait 10 minutes to finsh the script.
 
 
 Cfn-signal used to update the cloudformation resource to indicate whether it is updated sucessfully or not.
 
 /opt/aws/bin/cfn-signal -s true --stack ${AWS::StackName} --resource WebServerInstance --region ${AWS::Region}
+
+From events tab in cloudformation you can see only after the success signal sent from cfn-signal, the event CREATE_COMPLETE is published. 
