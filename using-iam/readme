@@ -1,0 +1,21 @@
+TO make changes to the file uploaded in s3 bucket, we need to add role to the ec2 instance to access s3.
+
+-----
+ UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          yum update -y
+          amazon-linux-extras install -y nginx1
+          rm -rf /usr/share/nginx/html/*
+          aws s3 cp s3://${WebServerBucket}/index.html /usr/share/nginx/html/
+          service nginx start
+-------          
+
+
+AWS::IAM::InstanceProfile
+https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-instanceprofile.html
+AWS::IAM::Role
+https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
+
+
+Role cannot be attached directly to instance, so we need a Instance profile. Instance profile is referenced from ec2 instance.
