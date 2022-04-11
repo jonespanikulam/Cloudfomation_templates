@@ -2,3 +2,25 @@ cfn-init
 ---------
 It is used to configure services such as EC2 instances to install package, start services, run files and commands. To do this we can fetch and parse 
 the Cloudformation init metadatas on the stack to get the configuration imformations
+
+under ec2 instance resources
+------
+    MetaData:
+      AWS::Cloudformation::Init
+        config:
+          packages:
+            yum:
+              nginx: []
+          services:
+            sysvinit:
+              nginx:
+                enabled: true
+                ensureRunning: true
+                files:
+                  - /etc/nginx/nginx.conf
+                sources:
+                  - /usr/share/nginx/html
+                  
+under user-data
+-------
+      /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource WebServerInstance --region ${AWS::Region}
