@@ -1,3 +1,5 @@
+SAME files used for use-iam templates are used here. Only creationpolicy and cfn signal are added.
+
 To make the webserver instance wait util the user data script finish sucessfully and make it reach CREATE_COMPLETE state only if the script succeed we use
 CreationPolicy attribute and cfn-signal script.
 
