@@ -19,3 +19,11 @@ https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-
 
 
 Role cannot be attached directly to instance, so we need a Instance profile. Instance profile is referenced from ec2 instance.
+
+
+* Creating IAM roles in templates requires some acknowledgments. So to do this we add capabilities in deploy scripts. If we are deploying through console
+there are checkboxes for capabilities.
+
+--capabilities CAPABILITY_IAM
+or 
+--capabilities CAPABILITY_NAMED_IAM   -- if its a custom role.
