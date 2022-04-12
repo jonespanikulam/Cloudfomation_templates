@@ -1,1 +1,26 @@
+Here we will be creating custom nginx index webpage in Cloudformation Init metadata using the attribute 'sources'
+The file uploaded should be in zip format in s3 bucket.
+-----
+sources:
+            /usr/share/nginx/html: !Sub 'http://s3.${AWS::Region}.amazonaws.com/${WebServerBucket}/index.html.zip'
+-----
 
+Need to provide permission for cfn init to access the bucket. Done using AWS::Cloudformation::Authentication
+cfn-init uses this credentials to access the s3 files.
+2 types:
+  basic authentication
+  s3 authentication
+----
+AWS::Cloudformation::Authentication
+        WebsiteBucketCredentials:
+          type: S3
+          buckets:
+            - !Ref WebServerBucket
+          roleName: !Ref WebServerIAMRole
+------          
+  
+under init, we need to add permission for windows users.
+         # Necessary for windows users
+          commands:
+            01_set_source_permissions:
+              command: 'sudo chmod ugo+r /usr/share/nginx/html'
