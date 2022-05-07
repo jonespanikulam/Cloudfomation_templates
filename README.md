@@ -1,5 +1,5 @@
 # Cloudfomation_templates
-Beginner level
+
 1) first-stack-template - create simple ec2 instance, sqs, sns
 
 2) resources-vpcEc2template - Create vpc, add ec2 in public subnet, IG, routetable, security groups.
