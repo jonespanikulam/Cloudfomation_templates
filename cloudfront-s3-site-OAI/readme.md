@@ -1,5 +1,8 @@
 Hosting Site in s3 using Cloudfront OAI
 -----------------------------------------
+
+Here we can access our s3 hosted website via CloudFront using OAI(Origin Access Identity). In this configuration, the S3 bucket will not be publicly available or publicly accessible. S3 Bucket’s objects are only accessible from CloudFront’s Origin Access Identity(OAI). 
+
 CLoudformation policies used:
 AWS::CloudFront::Distribution
 CloudFrontOriginAccessIdentity:
