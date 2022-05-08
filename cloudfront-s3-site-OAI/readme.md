@@ -1,5 +1,10 @@
 Hosting Site in s3 using Cloudfront OAI
 -----------------------------------------
+CLoudformation policies used:
+AWS::CloudFront::Distribution
+CloudFrontOriginAccessIdentity:
+AWS::S3::BucketPolicy
+
 
 ![c1](https://user-images.githubusercontent.com/59678465/167283747-95d7aed0-9bac-4f8e-bd6d-e5cb43cdffb6.jpg)
 
