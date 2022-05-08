@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create cloudfront distribution for s3 hosting using OAI..
+
+Resources:
+  CloudfrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:         
+         DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: true
+          #DefaultTTL: 86400
+          #ForwardedValues:
+          #  QueryString: true
+          #MaxTTL: 31536000
+          TargetOriginId: !Sub 'S3-${AWS::StackName}-root'
+          ViewerProtocolPolicy: 'redirect-to-https'
+ 
+         #CacheBehaviors:
+         #  - PathPattern: '*.html*'
+         #    AllowedMethods:
+         #    - GET
+         #    - HEAD
+         #    CachedMethods:
+         #    - GET
+         #    - HEAD
+         #    CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+         #    Compress: true
+         #    #TargetOriginId: !Sub 'S3-${AWS::StackName}-root'
+         #    TargetOriginId: s3hostingcloudfront.s3.us-east-1.amazonaws.com
+         #    ViewerProtocolPolicy: redirect-to-https
+ 
+         Comment: Distribution to host s3 bucket
+         DefaultRootObject: index.html
+         Enabled: true
+         HttpVersion: http2
+         Origins:
+           - DomainName: 's3hostingcloudfront.s3.us-east-1.amazonaws.com'
+             Id: !Sub 'S3-${AWS::StackName}-root'
+             S3OriginConfig:
+               OriginAccessIdentity: !Join ['', ['origin-access-identity/cloudfront/', !Ref CloudFrontOriginAccessIdentity]]
+         PriceClass: PriceClass_All
+      Tags:
+        - Key: Solution
+          Value: ACFS3   
+  CloudFrontOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: Origin Access Identity
+
+  S3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: s3hostingcloudfront
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action:
+              - s3:GetObject
+            Effect: Allow
+            Resource: arn:aws:s3:::s3hostingcloudfront/*
+            Principal:
+              CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
+
