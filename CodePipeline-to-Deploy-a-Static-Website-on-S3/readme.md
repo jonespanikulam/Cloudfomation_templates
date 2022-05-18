@@ -11,7 +11,7 @@ Not accessible using s3
 Accessible using cloudfront.
 ![image](https://user-images.githubusercontent.com/59678465/169017369-d4aaf2c6-5b1a-42b2-8189-8e3fe0258ab5.png)
 
-postbuild in buildspec file
+postbuild in buildspec file to do invalidation in cloudfront.
 ![image](https://user-images.githubusercontent.com/59678465/169017707-6a645763-090f-4217-9b53-41793f7e0569.png)
 
 Invalidation in cloudfront
